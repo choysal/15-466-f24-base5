@@ -66,6 +66,9 @@ PlayMode::PlayMode() : scene(*phonebank_scene) {
 	//start player walking at nearest walk point:
 	player.at = walkmesh->nearest_walk_point(player.transform->position);
 
+	answer =  {Note{1,false},Note{0,false},Note{0,false},Note{0,false},Note{1,false},Note{1,false}};
+
+
 }
 
 PlayMode::~PlayMode() {
@@ -93,6 +96,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_1){
+			one.downs += 1;
+			one.pressed = true;
+		} else if (evt.key.keysym.sym == SDLK_0){
+			zero.downs += 1;
+			zero.pressed = true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE){
+			space.downs += 1;
+			space.pressed = true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -106,6 +118,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_1) {
+			one.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_0) {
+			zero.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_SPACE) {
+			space.pressed = false;
 			return true;
 		}
 	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
@@ -146,6 +167,69 @@ void PlayMode::update(float elapsed) {
 		if (!left.pressed && right.pressed) move.x = 1.0f;
 		if (down.pressed && !up.pressed) move.y =-1.0f;
 		if (!down.pressed && up.pressed) move.y = 1.0f;
+
+		uint8_t player_note = 2; //set to a none note to init
+
+		bool match = false;
+		bool wrong_sequence = false;
+		
+		if(one.downs==1){ //if player hits one
+			player_note = 1;
+			//CHECK CORRECT NOTE
+			size_t note_count = 0;
+			match = false;
+			wrong_sequence = false;
+			while(note_count<6 && !match && !wrong_sequence){
+				if(!answer[note_count].correct){ //if next note
+					if(player_note == answer[note_count].note){ //if match
+						answer[note_count].correct = true;	//correct
+						match = true; //exit out of check loop	
+					} else {
+						wrong_sequence = true; //exit loop
+					}
+				}
+				note_count++;
+			}
+		}
+		if(zero.downs ==1){ //if player hits zero
+			player_note = 0;
+			//CHECK CORRECT NOTE
+			size_t note_count = 0;
+			match = false;
+			wrong_sequence = false;
+			while(note_count<6 && !match && !wrong_sequence){
+				if(!answer[note_count].correct){ //if next note
+					if(player_note == answer[note_count].note){ //if match
+						answer[note_count].correct = true;	//correct
+						match = true; //exit out of check loop	
+					} else {
+						wrong_sequence = true; //exit loop
+					}
+				}
+				note_count++;
+			}
+
+		}
+
+		if(wrong_sequence || space.downs==1){ //reset sequence
+			for (size_t i = 0; i < 6; i++){
+				answer[i].correct = false;
+			}
+			winner = false;
+		}
+
+
+
+		//TODO: Loop and check if all correct flags, then return WINNER
+
+		bool all_correct = true;
+		for (size_t i = 0; i < 6; i++){
+			if(answer[i].correct == false){
+				all_correct = false;
+			}
+		}
+
+		if (all_correct) winner = true;
 
 		//make it so that moving diagonally doesn't go faster:
 		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
@@ -227,6 +311,9 @@ void PlayMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+	one.downs = 0;
+	zero.downs = 0;
+	space.downs = 0;
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {
@@ -272,13 +359,21 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 			0.0f, 0.0f, 0.0f, 1.0f
 		));
 
+		std::string winner_string = std::to_string(0); 
+
+		if(winner){
+			winner_string = "YOU WIN!";
+		} else {
+			winner_string = "KEEP LOOKING...";
+		}	
+
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text(winner_string,
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion looks; WASD moves; escape ungrabs mouse",
+		lines.draw_text(winner_string,
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
