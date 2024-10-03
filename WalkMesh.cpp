@@ -42,8 +42,10 @@ WalkMesh::WalkMesh(std::vector< glm::vec3 > const &vertices_, std::vector< glm::
 
 //project pt to the plane of triangle a,b,c and return the barycentric weights of the projected point:
 glm::vec3 barycentric_weights(glm::vec3 const &a, glm::vec3 const &b, glm::vec3 const &c, glm::vec3 const &pt) {
+	// CREDIT: Code from class
 	// https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
     // From Christer Ericson's Real time Collision Detection
+	
     
     glm::vec3 v0 = b-a, v1 = c-a, v2 = pt-a;
     
@@ -128,6 +130,7 @@ WalkPoint WalkMesh::nearest_walk_point(glm::vec3 const &world_point) const {
 
 
 void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, WalkPoint *end_, float *time_) const {
+	// CREDIT: Code from class
 	assert(end_);
 	auto &end = *end_;
 
@@ -172,6 +175,7 @@ void WalkMesh::walk_in_triangle(WalkPoint const &start, glm::vec3 const &step, W
 }
 
 bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *rotation_) const {
+	// CREDIT: concept from class
 	assert(end_);
 	auto &end = *end_;
 
@@ -195,8 +199,7 @@ bool WalkMesh::cross_edge(WalkPoint const &start, WalkPoint *end_, glm::quat *ro
 		end.weights.x = start.weights.y;
 		end.weights.y = start.weights.x;
 
-		//CREDIT: help from Mandy Hu (mandyh) for start and end normal
-
+		//CREDIT: help from Mandy Hu for start and end normal
 		glm::vec3 start_normal = glm::normalize(glm::cross(vertices[start.indices.x]-vertices[start.indices.y],
 			vertices[start.indices.z] - vertices[start.indices.y]));
 		glm::vec3 end_normal = glm::normalize(glm::cross(vertices[end.indices.x]-vertices[end.indices.y],
